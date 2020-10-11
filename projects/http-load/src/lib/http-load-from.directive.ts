@@ -21,3 +21,9 @@ abstract class AbstractHttpLoadDirective<T> {
 })
 export class HttpLoadTextFromDirective extends AbstractHttpLoadDirective<string> {
 }
+
+@Directive({
+  selector: '[rlHttpLoad.json]',
+})
+export class HttpLoadJsonFromDirective<T> extends AbstractHttpLoadDirective<T> {
+}

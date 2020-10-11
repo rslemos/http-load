@@ -7,6 +7,7 @@ import { Type } from '@angular/core';
 
 import { HttpLoadModule } from './http-load.module';
 import { HttpLoadTextFromDirective } from './http-load-from.directive';
+import { HttpLoadJsonFromDirective } from './http-load-from.directive';
 
 function setup<T>(component: Type<T>): [ComponentFixture<T>] {
   TestBed.configureTestingModule({
@@ -37,6 +38,21 @@ describe('*rlHttpLoad.text', () => {
   });
 });
 
+describe('*rlHttpLoad.json', () => {
+  let host: ComponentFixture<TestJsonComponent>;
+
+  beforeEach(() => [ host ] = setup(TestJsonComponent));
+
+  it('should create', () => {
+    const directive = host.debugElement.queryAllNodes(By.directive(HttpLoadJsonFromDirective))[0];
+    expect(directive).toBeTruthy();
+  });
+
+  it('should be initially empty', () => {
+    expectTextContent(host, '');
+  });
+});
+
 @Component({
   template:
   `
@@ -44,6 +60,15 @@ describe('*rlHttpLoad.text', () => {
   `,
 })
 class TestTextComponent {
+}
+
+@Component({
+  template:
+  `
+    <pre *rlHttpLoad.json="let loadedObject"></pre>
+  `,
+})
+class TestJsonComponent {
 }
 
 /* utility functions */
