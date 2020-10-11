@@ -6,5 +6,46 @@
     "analytics": "bbf7c369-cac8-4e4e-afcd-06bd235d4ac8"
   },
   "newProjectRoot": "projects",
-  "projects": {}
+  "projects": {
+    "http-load": {
+      "projectType": "library",
+      "root": "projects/http-load",
+      "sourceRoot": "projects/http-load/src",
+      "prefix": "rl",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-ng-packagr:build",
+          "options": {
+            "tsConfig": "projects/http-load/tsconfig.lib.json",
+            "project": "projects/http-load/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/http-load/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/http-load/src/test.ts",
+            "tsConfig": "projects/http-load/tsconfig.spec.json",
+            "karmaConfig": "projects/http-load/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/http-load/tsconfig.lib.json",
+              "projects/http-load/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    }},
+  "defaultProject": "http-load"
 }
