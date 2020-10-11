@@ -13,6 +13,7 @@ import { Nullable } from 'typescript-nullable';
 import { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { filter } from 'rxjs/operators';
 import { map } from 'rxjs/operators';
 import { startWith } from 'rxjs/operators';
@@ -27,6 +28,14 @@ export class HttpContentLoadedContext<T> {
   ) { }
 }
 
+export class HttpContentErrorContext {
+  constructor(
+    // tslint:disable-next-line: no-any
+    public $implicit: any,
+    public rlHttpLoadFrom: string,
+  ) { }
+}
+
 type TupleTemplate<S> = [TemplateRef<S>, S];
 type TupleNullableTemplate<S> = [Nullable<TemplateRef<S>>, S];
 
@@ -36,6 +45,8 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
   private readonly destroyed$ = new Subject<boolean>();
 
   protected abstract get from(): Nullable<string>;
+  protected abstract get onError(): Nullable<TemplateRef<HttpContentErrorContext>>;
+
   protected abstract load(url: string): Observable<T>;
 
   constructor(
@@ -51,6 +62,9 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
         ?   this.load(url).pipe(
               map<T, TupleTemplate<HttpContentLoadedContext<T>>>(content =>
                 [this.templateRef, new HttpContentLoadedContext<T>(content, url)]),
+              catchError(error =>
+                of<TupleNullableTemplate<HttpContentErrorContext>>([this.onError, new HttpContentErrorContext(error, url)]),
+              ),
             )
         : of<TupleNullableTemplate<null>>([null, null]),
       ),
@@ -78,6 +92,7 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
 })
 export class HttpLoadTextFromDirective extends AbstractHttpLoadDirective<string> {
   @Input('rlHttpLoad.textFrom') from: Nullable<string>;
+  @Input('rlHttpLoad.textOnError') onError: Nullable<TemplateRef<HttpContentErrorContext>>;
 
   protected load(url: string): Observable<string> {
     return this.http.get(url, { responseType: 'text' });
@@ -89,6 +104,7 @@ export class HttpLoadTextFromDirective extends AbstractHttpLoadDirective<string>
 })
 export class HttpLoadJsonFromDirective<T> extends AbstractHttpLoadDirective<T> {
   @Input('rlHttpLoad.jsonFrom') from: Nullable<string>;
+  @Input('rlHttpLoad.jsonOnError') onError: Nullable<TemplateRef<HttpContentErrorContext>>;
 
   protected load(url: string): Observable<T> {
     return this.http.get<T>(url, { responseType: 'json' });

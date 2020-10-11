@@ -8,6 +8,7 @@ import { TestRequest } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { Type } from '@angular/core';
 import { JsonPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { HttpLoadModule } from './http-load.module';
 import { HttpLoadTextFromDirective } from './http-load-from.directive';
@@ -94,6 +95,20 @@ describe('*rlHttpLoad.text', () => {
     expectTextContent(host, '');
   });
 
+  it('should display network error', () => {
+    const url = changeUrl(host, '/text.txt');
+    const req = expectHttpRequest(httpTestingController, url, 'text');
+    const errorResponse = flushNetworkError(req, url);
+    expectTextContent(host, errorResponse);
+  });
+
+  it('should display server error', () => {
+    const url = changeUrl(host, '/text.txt');
+    const req = expectHttpRequest(httpTestingController, url, 'text');
+    const errorResponse = flushServerError(req, url);
+    expectTextContent(host, errorResponse);
+  });
+
   const sampleText = 'It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.';
 });
 
@@ -159,6 +174,20 @@ describe('*rlHttpLoad.json', () => {
     expectTextContent(host, '');
   });
 
+  it('should display network error', () => {
+    const url = changeUrl(host, '/object.json');
+    const req = expectHttpRequest(httpTestingController, url, 'json');
+    const errorResponse = flushNetworkError(req, url);
+    expectTextContent(host, errorResponse);
+  });
+
+  it('should display server error', () => {
+    const url = changeUrl(host, '/object.json');
+    const req = expectHttpRequest(httpTestingController, url, 'json');
+    const errorResponse = flushServerError(req, url);
+    expectTextContent(host, errorResponse);
+  });
+
   const sampleObject = {
     Image: {
       Width: 800,
@@ -178,7 +207,8 @@ describe('*rlHttpLoad.json', () => {
 @Component({
   template:
   `
-    <ng-container *rlHttpLoad.text="let loadedText from url">{{loadedText}}</ng-container>
+    <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
+    <ng-container *rlHttpLoad.text="let loadedText from url; onError: httpError">{{loadedText}}</ng-container>
   `,
 })
 class TestTextComponent {
@@ -188,7 +218,8 @@ class TestTextComponent {
 @Component({
   template:
   `
-    <pre *rlHttpLoad.json="let loadedObject from url">{{loadedObject | json}}</pre>
+    <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
+    <pre *rlHttpLoad.json="let loadedObject from url; onError: httpError">{{loadedObject | json}}</pre>
   `,
 })
 class TestJsonComponent {
@@ -223,4 +254,20 @@ function expectHttpRequest(httpTestingController: HttpTestingController, url: st
 
 function flushTooLate(req: TestRequest): void {
   expect(() => req.flush('this text should be ignored')).toThrowError('Cannot flush a cancelled request.');
+}
+
+function flushNetworkError(req: TestRequest, url: string): HttpErrorResponse {
+  const status = 0;
+  const statusText = '';
+  const error = new ErrorEvent('it doesn\'t matter');
+  req.error(error);
+  return new HttpErrorResponse({ error, status, statusText, url });
+}
+
+function flushServerError(req: TestRequest, url: string): HttpErrorResponse {
+  const status = 410;
+  const statusText = 'Gone';
+  const error = `${url} is no more`;
+  req.flush(error, { status, statusText });
+  return new HttpErrorResponse({ error, status, statusText, url });
 }
