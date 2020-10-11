@@ -1,6 +1,7 @@
 import { Directive } from '@angular/core';
 import { Input } from '@angular/core';
 import { OnInit } from '@angular/core';
+import { OnDestroy } from '@angular/core';
 import { OnChanges } from '@angular/core';
 import { SimpleChanges } from '@angular/core';
 import { ViewContainerRef } from '@angular/core';
@@ -15,6 +16,7 @@ import { filter } from 'rxjs/operators';
 import { map } from 'rxjs/operators';
 import { startWith } from 'rxjs/operators';
 import { switchMap } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { tap } from 'rxjs/operators';
 
 export class HttpContentLoadedContext<T> {
@@ -27,8 +29,9 @@ export class HttpContentLoadedContext<T> {
 type TupleTemplate<S> = [TemplateRef<S>, S];
 
 @Directive()
-abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges {
+abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDestroy {
   private readonly from$ = new Subject<Nullable<string>>();
+  private readonly destroyed$ = new Subject<boolean>();
 
   protected abstract get from(): Nullable<string>;
   protected abstract load(url: string): Observable<T>;
@@ -51,7 +54,13 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges {
             ),
       ),
       tap(() => this.viewContainerRef.clear()),
+      takeUntil(this.destroyed$),
     ).subscribe(([templateRef, context]) => this.viewContainerRef.createEmbeddedView(templateRef, context));
+  }
+
+  ngOnDestroy(): void {
+    this.destroyed$.next(true);
+    this.destroyed$.complete();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
