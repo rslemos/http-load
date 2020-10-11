@@ -109,6 +109,14 @@ describe('*rlHttpLoad.text', () => {
     expectTextContent(host, errorResponse);
   });
 
+  it('should show `loading...`', () => {
+    const url = changeUrl(host, '/text.txt');
+    expectTextContent(host, `Loading ${url}...`);
+    const req = expectHttpRequest(httpTestingController, url, 'text');
+    req.flush(sampleText);
+    expectTextContent(host, sampleText);
+  });
+
   const sampleText = 'It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.';
 });
 
@@ -188,6 +196,14 @@ describe('*rlHttpLoad.json', () => {
     expectTextContent(host, errorResponse);
   });
 
+  it('should display `loading...`', () => {
+    const url = changeUrl(host, '/object.json');
+    expectTextContent(host, `Loading ${url}...`);
+    const req = expectHttpRequest(httpTestingController, url, 'json');
+    req.flush(sampleObject);
+    expectTextContent(host, sampleObject);
+  });
+
   const sampleObject = {
     Image: {
       Width: 800,
@@ -207,8 +223,9 @@ describe('*rlHttpLoad.json', () => {
 @Component({
   template:
   `
+    <ng-template #httpLoading let-url>Loading {{url}}...</ng-template>
     <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
-    <ng-container *rlHttpLoad.text="let loadedText from url; onError: httpError">{{loadedText}}</ng-container>
+    <ng-container *rlHttpLoad.text="let loadedText from url; loading: httpLoading; onError: httpError">{{loadedText}}</ng-container>
   `,
 })
 class TestTextComponent {
@@ -218,8 +235,9 @@ class TestTextComponent {
 @Component({
   template:
   `
+    <ng-template #httpLoading let-url>Loading {{url}}...</ng-template>
     <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
-    <pre *rlHttpLoad.json="let loadedObject from url; onError: httpError">{{loadedObject | json}}</pre>
+    <pre *rlHttpLoad.json="let loadedObject from url; loading: httpLoading; onError: httpError">{{loadedObject | json}}</pre>
   `,
 })
 class TestJsonComponent {
