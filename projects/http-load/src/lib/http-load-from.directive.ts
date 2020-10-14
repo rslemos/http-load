@@ -54,9 +54,9 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
             )
         : of<TupleNullableTemplate<null>>([null, null]),
       ),
+      tap(() => this.viewContainerRef.clear()),
       filter(([templateRef]) => Nullable.isSome(templateRef)),
       map(<S>(maybetuple: TupleNullableTemplate<S>) => maybetuple as TupleTemplate<S>),
-      tap(() => this.viewContainerRef.clear()),
       takeUntil(this.destroyed$),
     ).subscribe(([templateRef, context]) => this.viewContainerRef.createEmbeddedView(templateRef, context));
   }

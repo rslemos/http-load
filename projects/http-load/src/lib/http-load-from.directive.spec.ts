@@ -84,6 +84,16 @@ describe('*rlHttpLoad.text', () => {
     flushTooLate(req);
   });
 
+  it('should clear view on url change to null', () => {
+    const url = changeUrl(host, '/text.txt');
+    const req = expectHttpRequest(httpTestingController, url, 'text');
+    req.flush(sampleText);
+
+    changeUrl(host, null);
+    httpTestingController.verify();
+    expectTextContent(host, '');
+  });
+
   const sampleText = 'It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.';
 });
 
@@ -137,6 +147,16 @@ describe('*rlHttpLoad.json', () => {
     httpTestingController.verify();
 
     flushTooLate(req);
+  });
+
+  it('should clear view on url change to null', () => {
+    const url = changeUrl(host, '/object.json');
+    const req = expectHttpRequest(httpTestingController, url, 'json');
+    req.flush(sampleObject);
+
+    changeUrl(host, null);
+    httpTestingController.verify();
+    expectTextContent(host, '');
   });
 
   const sampleObject = {
