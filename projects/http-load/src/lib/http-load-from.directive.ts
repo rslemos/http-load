@@ -1,5 +1,6 @@
 import { Directive } from '@angular/core';
 import { Input } from '@angular/core';
+import { OnInit } from '@angular/core';
 import { OnChanges } from '@angular/core';
 import { SimpleChanges } from '@angular/core';
 import { ViewContainerRef } from '@angular/core';
@@ -9,6 +10,12 @@ import { HttpClient } from '@angular/common/http';
 import { Nullable } from 'typescript-nullable';
 
 import { Observable } from 'rxjs';
+import { Subject } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
+import { startWith } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 export class HttpContentLoadedContext<T> {
   constructor(
@@ -17,8 +24,12 @@ export class HttpContentLoadedContext<T> {
   ) { }
 }
 
+type TupleTemplate<S> = [TemplateRef<S>, S];
+
 @Directive()
-abstract class AbstractHttpLoadDirective<T> implements OnChanges {
+abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges {
+  private readonly from$ = new Subject<Nullable<string>>();
+
   protected abstract get from(): Nullable<string>;
   protected abstract load(url: string): Observable<T>;
 
@@ -28,15 +39,24 @@ abstract class AbstractHttpLoadDirective<T> implements OnChanges {
     protected readonly http: HttpClient,
   ) { }
 
+  ngOnInit(): void {
+    this.from$.pipe(
+      startWith(this.from),
+      filter(Nullable.isSome),
+      map(Nullable.withDefault('')),
+      switchMap(url =>
+            this.load(url).pipe(
+              map<T, TupleTemplate<HttpContentLoadedContext<T>>>(content =>
+                [this.templateRef, new HttpContentLoadedContext<T>(content, url)]),
+            ),
+      ),
+      tap(() => this.viewContainerRef.clear()),
+    ).subscribe(([templateRef, context]) => this.viewContainerRef.createEmbeddedView(templateRef, context));
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
-    const url = this.from;
-    if (changes.from && Nullable.isSome(url)) {
-      this.load(url).subscribe(
-        content => {
-          this.viewContainerRef.clear();
-          this.viewContainerRef.createEmbeddedView(this.templateRef, new HttpContentLoadedContext<T>(content, url));
-        },
-      );
+    if (changes.from && !changes.from.firstChange) {
+      this.from$.next(this.from);
     }
   }
 }

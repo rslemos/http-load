@@ -55,6 +55,19 @@ describe('*rlHttpLoad.text', () => {
     expectTextContent(host, sampleText);
   });
 
+  it('should abort on url change', () => {
+    const url0 = changeUrl(host, '/text0.txt');
+    const req0 = expectHttpRequest(httpTestingController, url0, 'text');
+
+    const url1 = changeUrl(host, '/text1.txt');
+    const req1 = expectHttpRequest(httpTestingController, url1, 'text');
+    req1.flush(sampleText);
+
+    flushTooLate(req0);
+
+    expectTextContent(host, sampleText);
+  });
+
   const sampleText = 'It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.';
 });
 
@@ -78,6 +91,19 @@ describe('*rlHttpLoad.json', () => {
     const url = changeUrl(host, '/object.json');
     const req = expectHttpRequest(httpTestingController, url, 'json');
     req.flush(sampleObject);
+    expectTextContent(host, sampleObject);
+  });
+
+  it('should abort on url change', () => {
+    const url0 = changeUrl(host, '/object0.json');
+    const req0 = expectHttpRequest(httpTestingController, url0, 'json');
+
+    const url1 = changeUrl(host, '/object1.json');
+    const req1 = expectHttpRequest(httpTestingController, url1, 'json');
+    req1.flush(sampleObject);
+
+    flushTooLate(req0);
+
     expectTextContent(host, sampleObject);
   });
 
@@ -143,3 +169,6 @@ function expectHttpRequest(httpTestingController: HttpTestingController, url: st
   return req;
 }
 
+function flushTooLate(req: TestRequest): void {
+  expect(() => req.flush('this text should be ignored')).toThrowError('Cannot flush a cancelled request.');
+}
