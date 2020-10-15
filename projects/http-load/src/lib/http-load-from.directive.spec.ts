@@ -72,6 +72,15 @@ describe('*rlHttpLoad.text', () => {
     const url = changeUrl(host, '/text.txt');
     const req = expectHttpRequest(httpTestingController, url, 'text');
     host.destroy();
+  });
+
+  it('should abort on url change to null', () => {
+    const url = changeUrl(host, '/text.txt');
+    const req = expectHttpRequest(httpTestingController, url, 'text');
+
+    changeUrl(host, null);
+    httpTestingController.verify();
+
     flushTooLate(req);
   });
 
@@ -118,6 +127,15 @@ describe('*rlHttpLoad.json', () => {
     const url = changeUrl(host, '/object.json');
     const req = expectHttpRequest(httpTestingController, url, 'json');
     host.destroy();
+  });
+
+  it('should abort on url change to null', () => {
+    const url = changeUrl(host, '/object.json');
+    const req = expectHttpRequest(httpTestingController, url, 'json');
+
+    changeUrl(host, null);
+    httpTestingController.verify();
+
     flushTooLate(req);
   });
 
