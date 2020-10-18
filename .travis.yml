@@ -1,0 +1,19 @@
+dist: bionic
+services:
+  - xvfb
+
+language: node_js
+node_js:
+  - 12
+
+os:
+  - linux
+addons:
+  chrome: stable
+
+jobs:
+  include:
+    - stage: lint
+      script: ng lint
+    - stage: test
+      script: ng test --watch=false
