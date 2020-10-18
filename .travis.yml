@@ -1,13 +1,13 @@
 dist: bionic
 services:
-  - xvfb
+- xvfb
 
 language: node_js
 node_js:
-  - 12
+- 12
 
 os:
-  - linux
+- linux
 addons:
   chrome: stable
 
@@ -17,5 +17,10 @@ jobs:
       script: npm run lint
     - stage: test
       script:
-        - npm run test:coverage
-        - npm run report-coverage
+      - npm run test:coverage
+      - npm run report-coverage
+    - stage: build & publish
+      script:
+      - npm run build
+      - npm run publish
+      if: branch = master

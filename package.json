@@ -1,17 +1,19 @@
 {
   "name": "http-load",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --prod",
     "test": "ng test",
     "test:coverage": "ng test --code-coverage --watch=false",
     "report-coverage": "cat ./coverage/http-load/lcov.info | codecov",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "publish": "npx semantic-release",
+    "adjust-version": "rjp projects/http-load/package.json version $VERSION"
   },
-  "private": true,
+  "private": false,
   "dependencies": {
     "@angular/animations": "~10.0.5",
     "@angular/common": "~10.0.5",
@@ -34,6 +36,9 @@
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
     "@commitlint/prompt": "^11.0.0",
+    "@semantic-release/changelog": "^5.0.1",
+    "@semantic-release/exec": "^5.0.0",
+    "@semantic-release/git": "^9.0.0",
     "@types/jasmine": "~3.5.0",
     "@types/jasminewd2": "~2.0.3",
     "@types/node": "^12.11.1",
@@ -49,6 +54,8 @@
     "karma-jasmine-html-reporter": "^1.5.0",
     "ng-packagr": "^10.0.0",
     "protractor": "~7.0.0",
+    "replace-json-property": "^1.6.1",
+    "semantic-release": "^17.2.1",
     "ts-node": "~8.3.0",
     "tslint": "~6.1.0",
     "typescript": "~3.9.5"
@@ -63,5 +70,9 @@
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },
-  "licence": "MIT"
+  "licence": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rslemos/http-load.git"
+  }
 }
