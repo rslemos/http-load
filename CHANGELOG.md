@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/rslemos/http-load/compare/v1.0.0...v1.0.1) (2021-02-17)
+
+
+### Bug Fixes
+
+* demo application and README.md ([97da74a](https://github.com/rslemos/http-load/commit/97da74a47e0b9a11a3651f408f5500f6609cb3f9))
+
 # 1.0.0 (2020-10-19)
 
 
