@@ -19,8 +19,17 @@ jobs:
       script:
       - npm run test:coverage
       - npm run report-coverage
-    - stage: build & publish
+    - stage: build & publish http-load
       script:
-      - npm run build
-      - npm run publish
+      - npm run build:http-load
+      - npm run publish:http-load
+      if: branch = master
+    - stage: build & publish demo-app
+      script:
+      - npm run build:demo-app
+      deploy:
+        provider: pages
+        skip_cleanup: true
+        github_token: $GH_TOKEN
+        local_dir: dist/demo-app
       if: branch = master

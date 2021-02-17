@@ -4,13 +4,15 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --prod && copyfiles ./README.md ./dist/http-load",
+    "build:http-load": "ng build --prod http-load && copyfiles ./README.md ./dist/http-load",
+    "build:demo-app": "ng build --prod demo-app --base-href='https://rslemos.github.io/http-load/'",
     "test": "ng test",
     "test:coverage": "ng test --code-coverage --watch=false",
     "report-coverage": "cat ./coverage/http-load/lcov.info | codecov",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "publish": "npx semantic-release",
+    "publish:http-load": "npx semantic-release",
+    "publish:demo-app": "npx angular-cli-ghpages --dir=./dist/demo-app",
     "adjust-version": "rjp projects/http-load/package.json version $VERSION"
   },
   "private": false,

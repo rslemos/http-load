@@ -1,0 +1,45 @@
+<h2>Text Example</h2>
+
+<p>Here is a minimal example for loading text:</p>
+
+<pre *rlHttpLoad.text="let loadedText from 'assets/sample.txt'">
+{{loadedText}}
+</pre>
+
+<h2>Json Example</h2>
+
+<p>Here is a minimal example for loading a json object:</p>
+
+<pre *rlHttpLoad.json="let loadedObject from 'assets/sample.json'">
+{{loadedObject | json}}
+</pre>
+
+<h2>Other features</h2>
+
+<h3>Error handling</h3>
+
+<p>For both text and json loading you can handle network and server errors, directing the `rlHttpLoad` directive to show an alternative angular template in case of error:</p>
+
+<pre *rlHttpLoad.text="let loadedText from 'assets/unknown.txt'; onError: useThisTemplateInCaseOfHttpError">
+{{loadedText}}
+</pre>
+
+<ng-template #useThisTemplateInCaseOfHttpError let-errorObject let-url="rlHttpLoadFrom">
+<pre>
+An error occurred when trying to download from {{url}}. Please try again later.
+
+Error object:
+{{errorObject | json}}
+</pre>
+</ng-template>
+
+<h3>Throbber</h3>
+
+<p>Though `rlHttpLoad` does not implement a throbber itself, it provides means to show one, by allowing you to provide another angular template to be shown right before dispatching the http request until the request resolves (either successfully, or after some error):</p>
+
+
+<pre *rlHttpLoad.text="let loadedText from 'assets/sample.txt'">{{loadedText}}</pre>
+
+<ng-template #throbber let-url>
+  Loading {{url}}...
+</ng-template>

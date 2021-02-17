@@ -12,6 +12,9 @@
     },
     {
       "path": "./projects/http-load/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/demo-app/tsconfig.app.json"
     }
   ]
 }

@@ -68,10 +68,10 @@ For both text and json loading you can handle network and server errors, directi
   RFC2616 content is {{loadedText}}
 </div>
 
-<div #useThisTemplateInCaseOfHttpError let-errorObject let-url="rlHttpLoadFrom">
+<ng-template #useThisTemplateInCaseOfHttpError let-errorObject let-url="rlHttpLoadFrom">
   An error occurred when trying to download from {{url}}. Please try again later.
   <pre>{{errorObject | json}}</pre>
-</div>
+</ng-template>
 ```
 
 ### Throbber
@@ -84,7 +84,7 @@ Though `rlHttpLoad` does not implement a throbber itself, it provides means to s
   RFC2616 content is {{loadedText}}
 </div>
 
-<div #throbber let-url>
+<ng-template #throbber let-url>
   <ngx-some-fancy-throbber></ngx-some-fancy-throbber> loading {{url}}...
-</div>
+</ng-template>
 ```
