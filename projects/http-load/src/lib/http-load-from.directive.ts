@@ -47,9 +47,6 @@ export class HttpContentLoadingContext {
   }
 }
 
-type TupleTemplate<S> = [TemplateRef<S>, S];
-type TupleNullableTemplate<S> = [Nullable<TemplateRef<S>>, S];
-
 @Directive()
 abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDestroy {
   private readonly from$ = new Subject<Nullable<string>>();
@@ -72,20 +69,18 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
       startWith(this.from),
       switchMap(url => Nullable.isSome(url)
         ? concat(
-            of<TupleNullableTemplate<HttpContentLoadingContext>>([this.loading, new HttpContentLoadingContext(url)]),
+            of([this.loading, new HttpContentLoadingContext(url)] as const),
             this.load(url).pipe(
-              map<T, TupleTemplate<HttpContentLoadedContext<T>>>(content =>
-                [this.templateRef, new HttpContentLoadedContext<T>(content, url)]),
-              catchError(error =>
-                of<TupleNullableTemplate<HttpContentErrorContext>>([this.onError, new HttpContentErrorContext(error, url)]),
-              ),
+              map(content => [this.templateRef, new HttpContentLoadedContext<T>(content, url)] as const),
+              catchError(error => of([this.onError, new HttpContentErrorContext(error, url)] as const)),
             ),
           )
-        : of<TupleNullableTemplate<null>>([null, null]),
+        : of([null, null] as const),
       ),
       tap(() => this.viewContainerRef.clear()),
       filter(([templateRef]) => Nullable.isSome(templateRef)),
-      map(<S>(maybetuple: TupleNullableTemplate<S>) => maybetuple as TupleTemplate<S>),
+      // tslint:disable-next-line: no-non-null-assertion
+      map(([templateRef, context]) => [templateRef!, context] as const),
       takeUntil(this.destroyed$),
     ).subscribe(([templateRef, context]) => this.viewContainerRef.createEmbeddedView(templateRef, context));
   }
