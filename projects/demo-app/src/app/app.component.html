@@ -38,7 +38,7 @@ Error object:
 <p>Though `rlHttpLoad` does not implement a throbber itself, it provides means to show one, by allowing you to provide another angular template to be shown right before dispatching the http request until the request resolves (either successfully, or after some error):</p>
 
 
-<pre *rlHttpLoad.text="let loadedText from 'assets/sample.txt'">{{loadedText}}</pre>
+<pre *rlHttpLoad.text="let loadedText from 'assets/sample.txt'; loading: throbber">{{loadedText}}</pre>
 
 <ng-template #throbber let-url>
   Loading {{url}}...
