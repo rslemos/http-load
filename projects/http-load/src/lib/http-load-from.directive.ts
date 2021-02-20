@@ -7,6 +7,9 @@ import { SimpleChanges } from '@angular/core';
 import { ViewContainerRef } from '@angular/core';
 import { TemplateRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { HttpEvent } from '@angular/common/http';
+import { HttpEventType } from '@angular/common/http';
+import { HttpResponse } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { Nullable } from 'typescript-nullable';
@@ -26,11 +29,11 @@ import { tap } from 'rxjs/operators';
 export class HttpContentLoadedContext<T> {
   constructor(
     public rlHttpLoadFrom: string,
-    public content: Nullable<T>,
+    public response: HttpResponse<T>,
   ) { }
 
   public get $implicit(): Nullable<T> {
-    return this.content;
+    return this.response.body;
   }
 }
 
@@ -45,13 +48,14 @@ export class HttpContentErrorContext {
   }
 }
 
-export class HttpContentLoadingContext {
+export class HttpContentLoadingContext<T> {
   constructor(
     public rlHttpLoadFrom: string,
+    public progress: Nullable<Exclude<HttpEvent<T>, HttpResponse<T>>>,
   ) { }
 
-  public get $implicit(): string {
-    return this.rlHttpLoadFrom;
+  public get $implicit(): Nullable<Exclude<HttpEvent<T>, HttpResponse<T>>> {
+    return this.progress;
   }
 }
 
@@ -62,9 +66,9 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
 
   protected abstract get from(): Nullable<string>;
   protected abstract get onError(): Nullable<TemplateRef<HttpContentErrorContext>>;
-  protected abstract get loading(): Nullable<TemplateRef<HttpContentLoadingContext>>;
+  protected abstract get loading(): Nullable<TemplateRef<HttpContentLoadingContext<T>>>;
 
-  protected abstract load(url: string): Observable<T>;
+  protected abstract load(url: string): Observable<HttpEvent<T>>;
 
   constructor(
     private readonly viewContainerRef: ViewContainerRef,
@@ -77,9 +81,12 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
       startWith(this.from),
       switchMap(url => Nullable.isSome(url)
         ? concat(
-            of([this.loading, new HttpContentLoadingContext(url)] as const),
+            of([this.loading, new HttpContentLoadingContext<T>(url, null)] as const),
             this.load(url).pipe(
-              map(content => [this.templateRef, new HttpContentLoadedContext<T>(url, content)] as const),
+              map(event => event.type === HttpEventType.Response
+                ? [this.templateRef, new HttpContentLoadedContext<T>(url, event)] as const
+                : [this.loading, new HttpContentLoadingContext<T>(url, event)] as const,
+              ),
               catchError(error => of([this.onError, new HttpContentErrorContext(url, error)] as const)),
             ),
           )
@@ -111,10 +118,10 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
 export class HttpLoadTextFromDirective extends AbstractHttpLoadDirective<string> {
   @Input('rlHttpLoad.textFrom') from: Nullable<string>;
   @Input('rlHttpLoad.textOnError') onError: Nullable<TemplateRef<HttpContentErrorContext>>;
-  @Input('rlHttpLoad.textLoading') loading: Nullable<TemplateRef<HttpContentLoadingContext>>;
+  @Input('rlHttpLoad.textLoading') loading: Nullable<TemplateRef<HttpContentLoadingContext<string>>>;
 
-  protected load(url: string): Observable<string> {
-    return this.http.get(url, { responseType: 'text' });
+  protected load(url: string): Observable<HttpEvent<string>> {
+    return this.http.get(url, { responseType: 'text', observe: 'events', reportProgress: true });
   }
 }
 
@@ -124,9 +131,9 @@ export class HttpLoadTextFromDirective extends AbstractHttpLoadDirective<string>
 export class HttpLoadJsonFromDirective<T> extends AbstractHttpLoadDirective<T> {
   @Input('rlHttpLoad.jsonFrom') from: Nullable<string>;
   @Input('rlHttpLoad.jsonOnError') onError: Nullable<TemplateRef<HttpContentErrorContext>>;
-  @Input('rlHttpLoad.jsonLoading') loading: Nullable<TemplateRef<HttpContentLoadingContext>>;
+  @Input('rlHttpLoad.jsonLoading') loading: Nullable<TemplateRef<HttpContentLoadingContext<T>>>;
 
-  protected load(url: string): Observable<T> {
-    return this.http.get<T>(url, { responseType: 'json' });
+  protected load(url: string): Observable<HttpEvent<T>> {
+    return this.http.get<T>(url, { responseType: 'json', observe: 'events', reportProgress: true });
   }
 }

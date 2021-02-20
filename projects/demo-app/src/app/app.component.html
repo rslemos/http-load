@@ -38,8 +38,19 @@ Error object:
 <p>Though `rlHttpLoad` does not implement a throbber itself, it provides means to show one, by allowing you to provide another angular template to be shown right before dispatching the http request until the request resolves (either successfully, or after some error):</p>
 
 
-<pre *rlHttpLoad.text="let loadedText from 'assets/sample.txt'; loading: throbber">{{loadedText}}</pre>
+<pre *rlHttpLoad.text="let loadedText from 'longtext'; loading: throbber">{{loadedText}}</pre>
 
-<ng-template #throbber let-url>
-  Loading {{url}}...
+<ng-template #throbber let-progress let-url="rlHttpLoadFrom">
+  url: {{ url }},<br>
+  <ng-container *ngIf="progress">
+    type: {{ progress.type }},<br>
+    <ng-container *ngIf="progress.type === 2">
+      headers (keys): {{ progress.headers.keys().join(', ') }},<br>
+      headers['Content-Type']: {{ progress.headers.get('Content-Type') }},<br>
+    </ng-container>
+    <ng-container *ngIf="progress.type === 3">
+      loaded: {{ progress.loaded }},<br>
+      total: {{ progress.total }},<br>
+    </ng-container>
+  </ng-container>
 </ng-template>

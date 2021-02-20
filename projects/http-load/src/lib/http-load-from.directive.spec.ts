@@ -8,7 +8,11 @@ import { TestRequest } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { Type } from '@angular/core';
 import { JsonPipe } from '@angular/common';
+import { HttpDownloadProgressEvent } from '@angular/common/http';
+import { HttpEventType } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
+import { HttpHeaderResponse } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
 
 import { HttpLoadModule } from './http-load.module';
 import { HttpLoadTextFromDirective } from './http-load-from.directive';
@@ -109,10 +113,17 @@ describe('*rlHttpLoad.text', () => {
     expectTextContent(host, errorResponse);
   });
 
-  it('should show `loading...`', () => {
+  it('should show progress', () => {
     const url = changeUrl(host, '/text.txt');
-    expectTextContent(host, `Loading ${url}...`);
     const req = expectHttpRequest(httpTestingController, url, 'text');
+    expectTextContent(host, `url: ${url}, type: ${HttpEventType.Sent},`);
+
+    sendHeaders(req, 200, 'OK', { 'Content-Type': 'text/plain' });
+    expectTextContent(host, `url: ${url}, type: ${HttpEventType.ResponseHeader}, headers (keys): Content-Type, headers['Content-Type']: text/plain,`);
+
+    sendPartialText(req, sampleText, 30);
+    expectTextContent(host, `url: ${url}, type: ${HttpEventType.DownloadProgress}, loaded: 30, total: ${sampleText.length}, partialText: ${sampleText.substring(0, 30)},`);
+
     req.flush(sampleText);
     expectTextContent(host, sampleText);
   });
@@ -196,10 +207,18 @@ describe('*rlHttpLoad.json', () => {
     expectTextContent(host, errorResponse);
   });
 
-  it('should display `loading...`', () => {
+  it('should show progress', () => {
     const url = changeUrl(host, '/object.json');
-    expectTextContent(host, `Loading ${url}...`);
     const req = expectHttpRequest(httpTestingController, url, 'json');
+    expectTextContent(host, `url: ${url}, type: ${HttpEventType.Sent},`);
+
+    sendHeaders(req, 200, 'OK', { 'Content-Type': 'application/json' });
+    expectTextContent(host, `url: ${url}, type: ${HttpEventType.ResponseHeader}, headers (keys): Content-Type, headers['Content-Type']: application/json,`);
+
+    const sampleData = JSON.stringify(sampleObject);
+    sendPartialData(req, sampleData, 30);
+    expectTextContent(host, `url: ${url}, type: ${HttpEventType.DownloadProgress}, loaded: 30, total: ${sampleData.length},`);
+
     req.flush(sampleObject);
     expectTextContent(host, sampleObject);
   });
@@ -222,7 +241,21 @@ describe('*rlHttpLoad.json', () => {
 
 @Component({
   template: `
-    <ng-template #httpLoading let-url>Loading {{url}}...</ng-template>
+    <ng-template #httpLoading let-progress let-url="rlHttpLoadFrom">
+      url: {{ url }},<br>
+      <ng-container *ngIf="progress">
+        type: {{ progress.type }},<br>
+        <ng-container *ngIf="progress.type === 2">
+          headers (keys): {{ progress.headers.keys().join(', ') }},<br>
+          headers['Content-Type']: {{ progress.headers.get('Content-Type') }},<br>
+        </ng-container>
+        <ng-container *ngIf="progress.type === 3">
+          loaded: {{ progress.loaded }},<br>
+          total: {{ progress.total }},<br>
+          partialText: {{ progress.partialText }},<br>
+        </ng-container>
+      </ng-container>
+    </ng-template>
     <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
     <ng-container *rlHttpLoad.text="let loadedText from url; loading: httpLoading; onError: httpError">{{loadedText}}</ng-container>
   `,
@@ -233,7 +266,20 @@ class TestTextComponent {
 
 @Component({
   template: `
-    <ng-template #httpLoading let-url>Loading {{url}}...</ng-template>
+    <ng-template #httpLoading let-progress let-url="rlHttpLoadFrom">
+      url: {{ url }},<br>
+      <ng-container *ngIf="progress">
+        type: {{ progress.type }},<br>
+        <ng-container *ngIf="progress.type === 2">
+          headers (keys): {{ progress.headers.keys().join(', ') }},<br>
+          headers['Content-Type']: {{ progress.headers.get('Content-Type') }},<br>
+        </ng-container>
+        <ng-container *ngIf="progress.type === 3">
+          loaded: {{ progress.loaded }},<br>
+          total: {{ progress.total }},<br>
+        </ng-container>
+      </ng-container>
+    </ng-template>
     <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
     <pre *rlHttpLoad.json="let loadedObject from url; loading: httpLoading; onError: httpError">{{loadedObject | json}}</pre>
   `,
@@ -266,6 +312,24 @@ function expectHttpRequest(httpTestingController: HttpTestingController, url: st
   expect(req.request.method).toEqual('GET');
   expect(req.request.responseType).toEqual(responseType);
   return req;
+}
+
+function sendHeaders(req: TestRequest, status: number, statusText: string, headers: { [name: string]: string | string[]; }): void {
+  const url = req.request.url;
+  req.event(new HttpHeaderResponse({ url, status, statusText, headers: new HttpHeaders(headers) }));
+}
+
+function sendPartialText(req: TestRequest, text: string, loaded: number): void {
+  const type = HttpEventType.DownloadProgress;
+  const total = text.length;
+  const partialText = text.substring(0, loaded);
+  req.event({ type, total, loaded, partialText } as HttpDownloadProgressEvent);
+}
+
+function sendPartialData(req: TestRequest, data: string, loaded: number): void {
+  const type = HttpEventType.DownloadProgress;
+  const total = data.length;
+  req.event({ type, total, loaded } as HttpDownloadProgressEvent);
 }
 
 function flushNetworkError(req: TestRequest, url: string): HttpErrorResponse {
