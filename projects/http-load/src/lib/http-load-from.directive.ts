@@ -7,6 +7,7 @@ import { SimpleChanges } from '@angular/core';
 import { ViewContainerRef } from '@angular/core';
 import { TemplateRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { Nullable } from 'typescript-nullable';
 
@@ -31,8 +32,7 @@ export class HttpContentLoadedContext<T> {
 
 export class HttpContentErrorContext {
   constructor(
-    // tslint:disable-next-line: no-any
-    public $implicit: any,
+    public $implicit: HttpErrorResponse,
     public rlHttpLoadFrom: string,
   ) { }
 }
