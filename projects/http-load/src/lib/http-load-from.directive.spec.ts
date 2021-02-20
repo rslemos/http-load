@@ -64,7 +64,7 @@ describe('*rlHttpLoad.text', () => {
     const req1 = expectHttpRequest(httpTestingController, url1, 'text');
     req1.flush(sampleText);
 
-    flushTooLate(req0);
+    expect(req0.cancelled).toBe(true);
 
     expectTextContent(host, sampleText);
   });
@@ -82,7 +82,7 @@ describe('*rlHttpLoad.text', () => {
     changeUrl(host, null);
     httpTestingController.verify();
 
-    flushTooLate(req);
+    expect(req.cancelled).toBe(true);
   });
 
   it('should clear view on url change to null', () => {
@@ -151,7 +151,7 @@ describe('*rlHttpLoad.json', () => {
     const req1 = expectHttpRequest(httpTestingController, url1, 'json');
     req1.flush(sampleObject);
 
-    flushTooLate(req0);
+    expect(req0.cancelled).toBe(true);
 
     expectTextContent(host, sampleObject);
   });
@@ -169,7 +169,7 @@ describe('*rlHttpLoad.json', () => {
     changeUrl(host, null);
     httpTestingController.verify();
 
-    flushTooLate(req);
+    expect(req.cancelled).toBe(true);
   });
 
   it('should clear view on url change to null', () => {
@@ -268,10 +268,6 @@ function expectHttpRequest(httpTestingController: HttpTestingController, url: st
   expect(req.request.method).toEqual('GET');
   expect(req.request.responseType).toEqual(responseType);
   return req;
-}
-
-function flushTooLate(req: TestRequest): void {
-  expect(() => req.flush('this text should be ignored')).toThrowError('Cannot flush a cancelled request.');
 }
 
 function flushNetworkError(req: TestRequest, url: string): HttpErrorResponse {
