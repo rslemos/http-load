@@ -221,8 +221,7 @@ describe('*rlHttpLoad.json', () => {
 });
 
 @Component({
-  template:
-  `
+  template: `
     <ng-template #httpLoading let-url>Loading {{url}}...</ng-template>
     <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
     <ng-container *rlHttpLoad.text="let loadedText from url; loading: httpLoading; onError: httpError">{{loadedText}}</ng-container>
@@ -233,8 +232,7 @@ class TestTextComponent {
 }
 
 @Component({
-  template:
-  `
+  template: `
     <ng-template #httpLoading let-url>Loading {{url}}...</ng-template>
     <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
     <pre *rlHttpLoad.json="let loadedObject from url; loading: httpLoading; onError: httpError">{{loadedObject | json}}</pre>
@@ -253,7 +251,7 @@ function expectTextContent(host: ComponentFixture<unknown>, expected: string | o
   if (typeof expected !== 'string') {
     expected = jsonPipe.transform(expected);
   }
-  expect((host.elementRef.nativeElement as HTMLElement).textContent).toBe(expected);
+  expect((host.elementRef.nativeElement as HTMLElement).textContent?.trim()).toBe(expected);
 }
 
 function changeUrl<T extends string | null>(host: ComponentFixture<TestComponent>, url: T): T {
