@@ -25,16 +25,24 @@ import { tap } from 'rxjs/operators';
 
 export class HttpContentLoadedContext<T> {
   constructor(
-    public $implicit: T,
     public rlHttpLoadFrom: string,
+    public content: Nullable<T>,
   ) { }
+
+  public get $implicit(): Nullable<T> {
+    return this.content;
+  }
 }
 
 export class HttpContentErrorContext {
   constructor(
-    public $implicit: HttpErrorResponse,
     public rlHttpLoadFrom: string,
+    public error: HttpErrorResponse,
   ) { }
+
+  public get $implicit(): HttpErrorResponse {
+    return this.error;
+  }
 }
 
 export class HttpContentLoadingContext {
@@ -71,8 +79,8 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
         ? concat(
             of([this.loading, new HttpContentLoadingContext(url)] as const),
             this.load(url).pipe(
-              map(content => [this.templateRef, new HttpContentLoadedContext<T>(content, url)] as const),
-              catchError(error => of([this.onError, new HttpContentErrorContext(error, url)] as const)),
+              map(content => [this.templateRef, new HttpContentLoadedContext<T>(url, content)] as const),
+              catchError(error => of([this.onError, new HttpContentErrorContext(url, error)] as const)),
             ),
           )
         : of([null, null] as const),
