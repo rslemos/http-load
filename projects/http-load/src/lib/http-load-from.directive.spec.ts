@@ -8,222 +8,72 @@ import { TestRequest } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { Type } from '@angular/core';
 import { JsonPipe } from '@angular/common';
+import { HttpRequest } from '@angular/common/http';
 import { HttpDownloadProgressEvent } from '@angular/common/http';
 import { HttpEventType } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpHeaderResponse } from '@angular/common/http';
 import { HttpHeaders } from '@angular/common/http';
 
+import { Nullable } from 'typescript-nullable';
+
 import { HttpLoadModule } from './http-load.module';
 import { HttpLoadTextFromDirective } from './http-load-from.directive';
 import { HttpLoadJsonFromDirective } from './http-load-from.directive';
 
-function setup<T>(component: Type<T>): [HttpTestingController, ComponentFixture<T>] {
-  TestBed.configureTestingModule({
-    declarations: [ component ],
-    imports: [
-      HttpClientTestingModule,
-      HttpLoadModule,
-    ],
-  }).compileComponents();
+const httpLoadingTemplate = `
+  <ng-template #httpLoading let-progress let-url="rlHttpLoadFrom">
+    url: {{ url }},<br>
+    <ng-container *ngIf="progress">
+      type: {{ progress.type }},<br>
+      <ng-container *ngIf="progress.type === 2">
+        headers (keys): {{ progress.headers.keys().join(', ') }},<br>
+        headers['Content-Type']: {{ progress.headers.get('Content-Type') }},<br>
+      </ng-container>
+      <ng-container *ngIf="progress.type === 3">
+        loaded: {{ progress.loaded }},<br>
+        total: {{ progress.total }},<br>
+        <ng-container *ngIf="progress.partialText !== undefined">
+          partialText: {{ progress.partialText }},<br>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+  </ng-template>
+`;
 
-  const httpTestingController = TestBed.inject(HttpTestingController);
+const httpErrorTemplate = `
+  <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
+`;
 
-  const host = TestBed.createComponent(component);
-  host.detectChanges(); // initial binding
+@Component({
+  template: `
+    ${httpLoadingTemplate}
+    ${httpErrorTemplate}
+    <ng-container *rlHttpLoad.text="let loadedText from url; loading: httpLoading; onError: httpError">{{loadedText}}</ng-container>
+  `,
+})
+class TestTextComponent {
+  public url: string | null = null;
+}
 
-  return [ httpTestingController, host ];
+@Component({
+  template: `
+    ${httpLoadingTemplate}
+    ${httpErrorTemplate}
+    <pre *rlHttpLoad.json="let loadedObject from url; loading: httpLoading; onError: httpError">{{loadedObject | json}}</pre>
+  `,
+})
+class TestJsonComponent {
+  public url: string | null = null;
 }
 
 const jsonPipe = new JsonPipe();
 
-describe('*rlHttpLoad.text', () => {
-  let httpTestingController: HttpTestingController;
-  let host: ComponentFixture<TestTextComponent>;
+testAllFeatures(HttpLoadTextFromDirective, TestTextComponent,
+  'It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.',
+);
 
-  beforeEach(() => [ httpTestingController, host ] = setup(TestTextComponent));
-
-  it('should create', () => {
-    const directive = host.debugElement.queryAllNodes(By.directive(HttpLoadTextFromDirective))[0];
-    expect(directive).toBeTruthy();
-  });
-
-  it('should be initially empty', () => {
-    httpTestingController.verify();
-    expectTextContent(host, '');
-  });
-
-  it('should download from url', () => {
-    const url = changeUrl(host, '/text.txt');
-    const req = expectHttpRequest(httpTestingController, url, 'text');
-    req.flush(sampleText);
-    expectTextContent(host, sampleText);
-  });
-
-  it('should abort on url change', () => {
-    const url0 = changeUrl(host, '/text0.txt');
-    const req0 = expectHttpRequest(httpTestingController, url0, 'text');
-
-    const url1 = changeUrl(host, '/text1.txt');
-    const req1 = expectHttpRequest(httpTestingController, url1, 'text');
-    req1.flush(sampleText);
-
-    expect(req0.cancelled).toBe(true);
-
-    expectTextContent(host, sampleText);
-  });
-
-  it('should abort download on destroy', () => {
-    const url = changeUrl(host, '/text.txt');
-    const req = expectHttpRequest(httpTestingController, url, 'text');
-    host.destroy();
-  });
-
-  it('should abort on url change to null', () => {
-    const url = changeUrl(host, '/text.txt');
-    const req = expectHttpRequest(httpTestingController, url, 'text');
-
-    changeUrl(host, null);
-    httpTestingController.verify();
-
-    expect(req.cancelled).toBe(true);
-  });
-
-  it('should clear view on url change to null', () => {
-    const url = changeUrl(host, '/text.txt');
-    const req = expectHttpRequest(httpTestingController, url, 'text');
-    req.flush(sampleText);
-
-    changeUrl(host, null);
-    httpTestingController.verify();
-    expectTextContent(host, '');
-  });
-
-  it('should display network error', () => {
-    const url = changeUrl(host, '/text.txt');
-    const req = expectHttpRequest(httpTestingController, url, 'text');
-    const errorResponse = flushNetworkError(req, url);
-    expectTextContent(host, errorResponse);
-  });
-
-  it('should display server error', () => {
-    const url = changeUrl(host, '/text.txt');
-    const req = expectHttpRequest(httpTestingController, url, 'text');
-    const errorResponse = flushServerError(req, url);
-    expectTextContent(host, errorResponse);
-  });
-
-  it('should show progress', () => {
-    const url = changeUrl(host, '/text.txt');
-    const req = expectHttpRequest(httpTestingController, url, 'text');
-    expectTextContent(host, `url: ${url}, type: ${HttpEventType.Sent},`);
-
-    sendHeaders(req, 200, 'OK', { 'Content-Type': 'text/plain' });
-    expectTextContent(host, `url: ${url}, type: ${HttpEventType.ResponseHeader}, headers (keys): Content-Type, headers['Content-Type']: text/plain,`);
-
-    sendPartialText(req, sampleText, 30);
-    expectTextContent(host, `url: ${url}, type: ${HttpEventType.DownloadProgress}, loaded: 30, total: ${sampleText.length}, partialText: ${sampleText.substring(0, 30)},`);
-
-    req.flush(sampleText);
-    expectTextContent(host, sampleText);
-  });
-
-  const sampleText = 'It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.';
-});
-
-describe('*rlHttpLoad.json', () => {
-  let httpTestingController: HttpTestingController;
-  let host: ComponentFixture<TestJsonComponent>;
-
-  beforeEach(() => [ httpTestingController, host ] = setup(TestJsonComponent));
-
-  it('should create', () => {
-    const directive = host.debugElement.queryAllNodes(By.directive(HttpLoadJsonFromDirective))[0];
-    expect(directive).toBeTruthy();
-  });
-
-  it('should be initially empty', () => {
-    httpTestingController.verify();
-    expectTextContent(host, '');
-  });
-
-  it('should download from url', () => {
-    const url = changeUrl(host, '/object.json');
-    const req = expectHttpRequest(httpTestingController, url, 'json');
-    req.flush(sampleObject);
-    expectTextContent(host, sampleObject);
-  });
-
-  it('should abort on url change', () => {
-    const url0 = changeUrl(host, '/object0.json');
-    const req0 = expectHttpRequest(httpTestingController, url0, 'json');
-
-    const url1 = changeUrl(host, '/object1.json');
-    const req1 = expectHttpRequest(httpTestingController, url1, 'json');
-    req1.flush(sampleObject);
-
-    expect(req0.cancelled).toBe(true);
-
-    expectTextContent(host, sampleObject);
-  });
-
-  it('should abort download on destroy', () => {
-    const url = changeUrl(host, '/object.json');
-    const req = expectHttpRequest(httpTestingController, url, 'json');
-    host.destroy();
-  });
-
-  it('should abort on url change to null', () => {
-    const url = changeUrl(host, '/object.json');
-    const req = expectHttpRequest(httpTestingController, url, 'json');
-
-    changeUrl(host, null);
-    httpTestingController.verify();
-
-    expect(req.cancelled).toBe(true);
-  });
-
-  it('should clear view on url change to null', () => {
-    const url = changeUrl(host, '/object.json');
-    const req = expectHttpRequest(httpTestingController, url, 'json');
-    req.flush(sampleObject);
-
-    changeUrl(host, null);
-    httpTestingController.verify();
-    expectTextContent(host, '');
-  });
-
-  it('should display network error', () => {
-    const url = changeUrl(host, '/object.json');
-    const req = expectHttpRequest(httpTestingController, url, 'json');
-    const errorResponse = flushNetworkError(req, url);
-    expectTextContent(host, errorResponse);
-  });
-
-  it('should display server error', () => {
-    const url = changeUrl(host, '/object.json');
-    const req = expectHttpRequest(httpTestingController, url, 'json');
-    const errorResponse = flushServerError(req, url);
-    expectTextContent(host, errorResponse);
-  });
-
-  it('should show progress', () => {
-    const url = changeUrl(host, '/object.json');
-    const req = expectHttpRequest(httpTestingController, url, 'json');
-    expectTextContent(host, `url: ${url}, type: ${HttpEventType.Sent},`);
-
-    sendHeaders(req, 200, 'OK', { 'Content-Type': 'application/json' });
-    expectTextContent(host, `url: ${url}, type: ${HttpEventType.ResponseHeader}, headers (keys): Content-Type, headers['Content-Type']: application/json,`);
-
-    const sampleData = JSON.stringify(sampleObject);
-    sendPartialData(req, sampleData, 30);
-    expectTextContent(host, `url: ${url}, type: ${HttpEventType.DownloadProgress}, loaded: 30, total: ${sampleData.length},`);
-
-    req.flush(sampleObject);
-    expectTextContent(host, sampleObject);
-  });
-
-  const sampleObject = {
+testAllFeatures(HttpLoadJsonFromDirective, TestJsonComponent, {
     Image: {
       Width: 800,
       Height: 600,
@@ -236,61 +86,141 @@ describe('*rlHttpLoad.json', () => {
       Animated: false,
       IDs: [116, 943, 234, 38793],
     },
-  };
-});
+  },
+);
 
-@Component({
-  template: `
-    <ng-template #httpLoading let-progress let-url="rlHttpLoadFrom">
-      url: {{ url }},<br>
-      <ng-container *ngIf="progress">
-        type: {{ progress.type }},<br>
-        <ng-container *ngIf="progress.type === 2">
-          headers (keys): {{ progress.headers.keys().join(', ') }},<br>
-          headers['Content-Type']: {{ progress.headers.get('Content-Type') }},<br>
-        </ng-container>
-        <ng-container *ngIf="progress.type === 3">
-          loaded: {{ progress.loaded }},<br>
-          total: {{ progress.total }},<br>
-          partialText: {{ progress.partialText }},<br>
-        </ng-container>
-      </ng-container>
-    </ng-template>
-    <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
-    <ng-container *rlHttpLoad.text="let loadedText from url; loading: httpLoading; onError: httpError">{{loadedText}}</ng-container>
-  `,
-})
-class TestTextComponent {
-  public url: string | null = null;
+const MIMETYPE_BY_RESPONSETYPE = {
+  text: 'text/plain',
+  json: 'application/json',
+};
+
+interface WithURL {
+  url: Nullable<string>;
 }
 
-@Component({
-  template: `
-    <ng-template #httpLoading let-progress let-url="rlHttpLoadFrom">
-      url: {{ url }},<br>
-      <ng-container *ngIf="progress">
-        type: {{ progress.type }},<br>
-        <ng-container *ngIf="progress.type === 2">
-          headers (keys): {{ progress.headers.keys().join(', ') }},<br>
-          headers['Content-Type']: {{ progress.headers.get('Content-Type') }},<br>
-        </ng-container>
-        <ng-container *ngIf="progress.type === 3">
-          loaded: {{ progress.loaded }},<br>
-          total: {{ progress.total }},<br>
-        </ng-container>
-      </ng-container>
-    </ng-template>
-    <ng-template #httpError let-errorObject><pre>{{errorObject | json}}</pre></ng-template>
-    <pre *rlHttpLoad.json="let loadedObject from url; loading: httpLoading; onError: httpError">{{loadedObject | json}}</pre>
-  `,
-})
-class TestJsonComponent {
-  public url: string | null = null;
+function testAllFeatures<D>(
+    directiveType: Type<D>,
+    testingComponentType: Type<WithURL>,
+    response: string | object,
+): void {
+  describe(directiveType.name, () => {
+    let httpTestingController: HttpTestingController;
+    let host: ComponentFixture<WithURL>;
+
+    const responseType = (() => {
+      if (typeof response === 'string') { return 'text'; }
+      return 'json';
+    })();
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({
+        declarations: [ testingComponentType ],
+        imports: [
+          HttpClientTestingModule,
+          HttpLoadModule,
+        ],
+      }).compileComponents();
+
+      httpTestingController = TestBed.inject(HttpTestingController);
+
+      host = TestBed.createComponent(testingComponentType);
+      host.detectChanges(); // initial binding
+    });
+
+    it('should create', () => {
+      const directive = host.debugElement.queryAllNodes(By.directive(directiveType))[0];
+      expect(directive).toBeTruthy();
+    });
+
+    it('should be initially empty', () => {
+      httpTestingController.verify();
+      expectTextContent(host, '');
+    });
+
+    it('should download from url', () => {
+      const url = changeUrl(host, '/any/given.url');
+      const req = expectHttpRequest(httpTestingController, url, responseType);
+      req.flush(response);
+      expectTextContent(host, response);
+    });
+
+    it('should abort on url change', () => {
+      const url0 = changeUrl(host, '/any/given.url');
+      const req0 = expectHttpRequest(httpTestingController, url0, responseType);
+
+      const url1 = changeUrl(host, '/an/other.url');
+      const req1 = expectHttpRequest(httpTestingController, url1, responseType);
+      req1.flush(response);
+
+      expect(req0.cancelled).toBe(true);
+
+      expectTextContent(host, response);
+    });
+
+    it('should abort download on destroy', () => {
+      const url = changeUrl(host, '/any/given.url');
+      const req = expectHttpRequest(httpTestingController, url, responseType);
+      host.destroy();
+    });
+
+    it('should abort on url change to null', () => {
+      const url = changeUrl(host, '/any/given.url');
+      const req = expectHttpRequest(httpTestingController, url, responseType);
+
+      changeUrl(host, null);
+      httpTestingController.verify();
+
+      expect(req.cancelled).toBe(true);
+    });
+
+    it('should clear view on url change to null', () => {
+      const url = changeUrl(host, '/any/given.url');
+      const req = expectHttpRequest(httpTestingController, url, responseType);
+      req.flush(response);
+
+      changeUrl(host, null);
+      httpTestingController.verify();
+      expectTextContent(host, '');
+    });
+
+    it('should display network error', () => {
+      const url = changeUrl(host, '/any/given.url');
+      const req = expectHttpRequest(httpTestingController, url, responseType);
+      const errorResponse = flushNetworkError(req, url);
+      expectTextContent(host, errorResponse);
+    });
+
+    it('should display server error', () => {
+      const url = changeUrl(host, '/any/given.url');
+      const req = expectHttpRequest(httpTestingController, url, responseType);
+      const errorResponse = flushServerError(req, url);
+      expectTextContent(host, errorResponse);
+    });
+
+    it('should show progress', () => {
+      const url = changeUrl(host, '/any/given.url');
+      const req = expectHttpRequest(httpTestingController, url, responseType);
+      expectTextContent(host, `url: ${url}, type: ${HttpEventType.Sent},`);
+
+      sendHeaders(req, 200, 'OK', { 'Content-Type': MIMETYPE_BY_RESPONSETYPE[responseType] });
+      expectTextContent(host, `url: ${url}, type: ${HttpEventType.ResponseHeader}, headers (keys): Content-Type, headers['Content-Type']: ${MIMETYPE_BY_RESPONSETYPE[responseType]},`);
+
+      if (typeof response === 'string') {
+        sendPartialText(req, response, 30);
+        expectTextContent(host, `url: ${url}, type: ${HttpEventType.DownloadProgress}, loaded: 30, total: ${response.length}, partialText: ${response.substring(0, 30)},`);
+      } else {
+        const sampleData = JSON.stringify(response);
+        sendPartialData(req, sampleData, 30);
+        expectTextContent(host, `url: ${url}, type: ${HttpEventType.DownloadProgress}, loaded: 30, total: ${sampleData.length},`);
+      }
+
+      req.flush(response);
+      expectTextContent(host, response);
+    });
+  });
 }
 
 /* utility functions */
-
-type TestComponent = TestTextComponent | TestJsonComponent;
 
 function expectTextContent(host: ComponentFixture<unknown>, expected: string | object): void {
   host.detectChanges();
@@ -300,13 +230,17 @@ function expectTextContent(host: ComponentFixture<unknown>, expected: string | o
   expect((host.elementRef.nativeElement as HTMLElement).textContent?.trim()).toBe(expected);
 }
 
-function changeUrl<T extends string | null>(host: ComponentFixture<TestComponent>, url: T): T {
+function changeUrl<T extends string | null>(host: ComponentFixture<WithURL>, url: T): T {
   host.componentInstance.url = url;
   host.detectChanges();
   return url;
 }
 
-function expectHttpRequest(httpTestingController: HttpTestingController, url: string, responseType: 'text' | 'json'): TestRequest {
+function expectHttpRequest<T>(
+    httpTestingController: HttpTestingController,
+    url: string,
+    responseType: HttpRequest<T>['responseType'],
+): TestRequest {
   const req = httpTestingController.expectOne(url);
   httpTestingController.verify();
   expect(req.request.method).toEqual('GET');
