@@ -18,6 +18,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { Nullable } from 'typescript-nullable';
 
 import { HttpLoadModule } from './http-load.module';
+import { HttpLoadArrayBufferFromDirective } from './http-load-from.directive';
 import { HttpLoadTextFromDirective } from './http-load-from.directive';
 import { HttpLoadJsonFromDirective } from './http-load-from.directive';
 
@@ -49,6 +50,21 @@ const httpErrorTemplate = `
   template: `
     ${httpLoadingTemplate}
     ${httpErrorTemplate}
+    <ng-container *rlHttpLoad.arraybuffer="let loadedBuffer from url; loading: httpLoading; onError: httpError">{{toString(loadedBuffer)}}</ng-container>
+  `,
+})
+class TestArrayBufferComponent {
+  public url: string | null = null;
+
+  public toString(buffer: ArrayBuffer): string {
+    return String.fromCharCode(...new Uint8Array(buffer));
+  }
+}
+
+@Component({
+  template: `
+    ${httpLoadingTemplate}
+    ${httpErrorTemplate}
     <ng-container *rlHttpLoad.text="let loadedText from url; loading: httpLoading; onError: httpError">{{loadedText}}</ng-container>
   `,
 })
@@ -68,6 +84,10 @@ class TestJsonComponent {
 }
 
 const jsonPipe = new JsonPipe();
+
+testAllFeatures(HttpLoadArrayBufferFromDirective, TestArrayBufferComponent,
+  new ArrayBuffer(16),
+);
 
 testAllFeatures(HttpLoadTextFromDirective, TestTextComponent,
   'It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.',
@@ -90,6 +110,7 @@ testAllFeatures(HttpLoadJsonFromDirective, TestJsonComponent, {
 );
 
 const MIMETYPE_BY_RESPONSETYPE = {
+  arraybuffer: 'application/octet-stream',
   text: 'text/plain',
   json: 'application/json',
 };
@@ -101,7 +122,7 @@ interface WithURL {
 function testAllFeatures<D>(
     directiveType: Type<D>,
     testingComponentType: Type<WithURL>,
-    response: string | object,
+    response: ArrayBuffer | string | object,
 ): void {
   describe(directiveType.name, () => {
     let httpTestingController: HttpTestingController;
@@ -109,6 +130,7 @@ function testAllFeatures<D>(
 
     const responseType = (() => {
       if (typeof response === 'string') { return 'text'; }
+      if (response instanceof ArrayBuffer) { return 'arraybuffer'; }
       return 'json';
     })();
 
@@ -224,7 +246,9 @@ function testAllFeatures<D>(
 
 function expectTextContent(host: ComponentFixture<unknown>, expected: string | object): void {
   host.detectChanges();
-  if (typeof expected !== 'string') {
+  if (expected instanceof ArrayBuffer) {
+    expected = String.fromCharCode(...new Uint8Array(expected));
+  } else if (typeof expected !== 'string') {
     expected = jsonPipe.transform(expected);
   }
   expect((host.elementRef.nativeElement as HTMLElement).textContent?.trim()).toBe(expected);
@@ -277,7 +301,16 @@ function flushNetworkError(req: TestRequest, url: string): HttpErrorResponse {
 function flushServerError(req: TestRequest, url: string): HttpErrorResponse {
   const status = 410;
   const statusText = 'Gone';
-  const error = `${url} is no more`;
+  let error: string | ArrayBufferLike;
+  switch (req.request.responseType) {
+    case 'arraybuffer':
+      error = Uint8Array.from(`${url} is no more`.split('').map(c => c.charCodeAt(0))).buffer;
+      break;
+    case 'text':
+    case 'json':
+    default:
+      error = `${url} is no more`;
+  }
   req.flush(error, { status, statusText });
   return new HttpErrorResponse({ error, status, statusText, url });
 }

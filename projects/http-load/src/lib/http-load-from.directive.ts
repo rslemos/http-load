@@ -113,6 +113,19 @@ abstract class AbstractHttpLoadDirective<T> implements OnInit, OnChanges, OnDest
 }
 
 @Directive({
+  selector: '[rlHttpLoad.arraybuffer][rlHttpLoad.arraybufferFrom]',
+})
+export class HttpLoadArrayBufferFromDirective extends AbstractHttpLoadDirective<ArrayBuffer> {
+  @Input('rlHttpLoad.arraybufferFrom') from: Nullable<string>;
+  @Input('rlHttpLoad.arraybufferOnError') onError: Nullable<TemplateRef<HttpContentErrorContext>>;
+  @Input('rlHttpLoad.arraybufferLoading') loading: Nullable<TemplateRef<HttpContentLoadingContext<ArrayBuffer>>>;
+
+  protected load(url: string): Observable<HttpEvent<ArrayBuffer>> {
+    return this.http.get(url, { responseType: 'arraybuffer', observe: 'events', reportProgress: true });
+  }
+}
+
+@Directive({
   selector: '[rlHttpLoad.text][rlHttpLoad.textFrom]',
 })
 export class HttpLoadTextFromDirective extends AbstractHttpLoadDirective<string> {

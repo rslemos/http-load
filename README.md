@@ -56,6 +56,16 @@ Here is a minimal example for loading a json object:
 </pre>
 ```
 
+## ArrayBuffer Example
+
+Here is a minimal example for loading an ArrayBuffer:
+
+(in any angular template, such as `app.component.html`)
+```html
+<div *rlHttpLoad.arraybuffer="let loadedArrayBuffer from 'https://raw.githubusercontent.com/rslemos/http-load/master/projects/demo-app/src/assets/sample.bin'">
+{{loadedArrayBuffer.byteLength}} bytes loaded
+</div>
+```
 
 ## Other features
 
