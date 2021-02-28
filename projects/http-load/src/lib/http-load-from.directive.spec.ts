@@ -19,6 +19,7 @@ import { Nullable } from 'typescript-nullable';
 
 import { HttpLoadModule } from './http-load.module';
 import { HttpLoadArrayBufferFromDirective } from './http-load-from.directive';
+import { HttpLoadBlobFromDirective } from './http-load-from.directive';
 import { HttpLoadTextFromDirective } from './http-load-from.directive';
 import { HttpLoadJsonFromDirective } from './http-load-from.directive';
 
@@ -65,6 +66,17 @@ class TestArrayBufferComponent {
   template: `
     ${httpLoadingTemplate}
     ${httpErrorTemplate}
+    <ng-container *rlHttpLoad.blob="let loadedBlob from url; loading: httpLoading; onError: httpError">{{loadedBlob.text() | async}}</ng-container>
+  `,
+})
+class TestBlobComponent {
+  public url: string | null = null;
+}
+
+@Component({
+  template: `
+    ${httpLoadingTemplate}
+    ${httpErrorTemplate}
     <ng-container *rlHttpLoad.text="let loadedText from url; loading: httpLoading; onError: httpError">{{loadedText}}</ng-container>
   `,
 })
@@ -89,6 +101,10 @@ testAllFeatures(HttpLoadArrayBufferFromDirective, TestArrayBufferComponent,
   new ArrayBuffer(16),
 );
 
+testAllFeatures(HttpLoadBlobFromDirective, TestBlobComponent,
+  new Blob(['It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.']),
+);
+
 testAllFeatures(HttpLoadTextFromDirective, TestTextComponent,
   'It is not by muscle, speed, or physical dexterity that great things are achieved, but by reflection, force of character, and judgment.',
 );
@@ -111,6 +127,7 @@ testAllFeatures(HttpLoadJsonFromDirective, TestJsonComponent, {
 
 const MIMETYPE_BY_RESPONSETYPE = {
   arraybuffer: 'application/octet-stream',
+  blob: 'application/octet-stream',
   text: 'text/plain',
   json: 'application/json',
 };
@@ -122,7 +139,7 @@ interface WithURL {
 function testAllFeatures<D>(
     directiveType: Type<D>,
     testingComponentType: Type<WithURL>,
-    response: ArrayBuffer | string | object,
+    response: ArrayBuffer | Blob | string | object,
 ): void {
   describe(directiveType.name, () => {
     let httpTestingController: HttpTestingController;
@@ -131,6 +148,7 @@ function testAllFeatures<D>(
     const responseType = (() => {
       if (typeof response === 'string') { return 'text'; }
       if (response instanceof ArrayBuffer) { return 'arraybuffer'; }
+      if (response instanceof Blob) { return 'blob'; }
       return 'json';
     })();
 
@@ -246,12 +264,19 @@ function testAllFeatures<D>(
 
 function expectTextContent(host: ComponentFixture<unknown>, expected: string | object): void {
   host.detectChanges();
-  if (expected instanceof ArrayBuffer) {
+  if (expected instanceof Blob) {
+    expected = expected.text();
+  } else if (expected instanceof ArrayBuffer) {
     expected = String.fromCharCode(...new Uint8Array(expected));
   } else if (typeof expected !== 'string') {
     expected = jsonPipe.transform(expected);
   }
-  expect((host.elementRef.nativeElement as HTMLElement).textContent?.trim()).toBe(expected);
+
+  if (expected instanceof Promise) {
+    expected.then(e => expect((host.elementRef.nativeElement as HTMLElement).textContent?.trim()).toBe(e));
+  } else if (typeof expected === 'string') {
+    expect((host.elementRef.nativeElement as HTMLElement).textContent?.trim()).toBe(expected);
+  }
 }
 
 function changeUrl<T extends string | null>(host: ComponentFixture<WithURL>, url: T): T {
@@ -301,14 +326,16 @@ function flushNetworkError(req: TestRequest, url: string): HttpErrorResponse {
 function flushServerError(req: TestRequest, url: string): HttpErrorResponse {
   const status = 410;
   const statusText = 'Gone';
-  let error: string | ArrayBufferLike;
+  let error: string | ArrayBufferLike | Blob;
   switch (req.request.responseType) {
     case 'arraybuffer':
       error = Uint8Array.from(`${url} is no more`.split('').map(c => c.charCodeAt(0))).buffer;
       break;
+    case 'blob':
+      error = new Blob([`${url} is no more`]);
+      break;
     case 'text':
     case 'json':
-    default:
       error = `${url} is no more`;
   }
   req.flush(error, { status, statusText });

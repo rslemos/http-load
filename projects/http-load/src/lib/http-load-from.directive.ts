@@ -126,6 +126,19 @@ export class HttpLoadArrayBufferFromDirective extends AbstractHttpLoadDirective<
 }
 
 @Directive({
+  selector: '[rlHttpLoad.blob][rlHttpLoad.blobFrom]',
+})
+export class HttpLoadBlobFromDirective extends AbstractHttpLoadDirective<Blob> {
+  @Input('rlHttpLoad.blobFrom') from: Nullable<string>;
+  @Input('rlHttpLoad.blobOnError') onError: Nullable<TemplateRef<HttpContentErrorContext>>;
+  @Input('rlHttpLoad.blobLoading') loading: Nullable<TemplateRef<HttpContentLoadingContext<Blob>>>;
+
+  protected load(url: string): Observable<HttpEvent<Blob>> {
+    return this.http.get(url, { responseType: 'blob', observe: 'events', reportProgress: true });
+  }
+}
+
+@Directive({
   selector: '[rlHttpLoad.text][rlHttpLoad.textFrom]',
 })
 export class HttpLoadTextFromDirective extends AbstractHttpLoadDirective<string> {
