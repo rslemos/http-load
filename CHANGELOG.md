@@ -1,3 +1,23 @@
+# [2.0.0](https://github.com/rslemos/http-load/compare/v1.0.1...v2.0.0) (2021-02-28)
+
+
+### Bug Fixes
+
+* fixup ([03b567c](https://github.com/rslemos/http-load/commit/03b567c7d16b5e245927b8fef2198eccbfdfd819))
+
+
+### Features
+
+* **http-load:** handling of `ArrayBuffer` response type ([bd17a6c](https://github.com/rslemos/http-load/commit/bd17a6c25b70322ae335771011a1feb18829bc62))
+* **http-load:** provide progress reporting to `loading` template ([a5708f3](https://github.com/rslemos/http-load/commit/a5708f3c5e62fd704fa49b45b7e72574a4c92790))
+
+
+### BREAKING CHANGES
+
+* **http-load:** the `$implicit` for `loading` template used to be the
+requested url. Now the `$implicit` is the `HttpEvent` object. The
+requested url is available as `rlHttpLoadFrom` in all templates.
+
 ## [1.0.1](https://github.com/rslemos/http-load/compare/v1.0.0...v1.0.1) (2021-02-17)
 
 
