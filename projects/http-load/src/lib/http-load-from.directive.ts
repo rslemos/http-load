@@ -12,8 +12,6 @@ import { HttpEventType } from '@angular/common/http';
 import { HttpResponse } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { Nullable } from 'typescript-nullable';
-
 import { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 import { concat } from 'rxjs';
@@ -25,6 +23,16 @@ import { startWith } from 'rxjs/operators';
 import { switchMap } from 'rxjs/operators';
 import { takeUntil } from 'rxjs/operators';
 import { tap } from 'rxjs/operators';
+
+export type None = null | undefined;
+export type Nullable<T> = T | None;
+
+const isSome = <T>(nullable: Nullable<T>): nullable is T =>
+  nullable !== null && nullable !== undefined;
+
+export const Nullable = {
+  isSome,
+};
 
 export class HttpContentLoadedContext<T> {
   constructor(

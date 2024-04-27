@@ -15,7 +15,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { HttpHeaderResponse } from '@angular/common/http';
 import { HttpHeaders } from '@angular/common/http';
 
-import { Nullable } from 'typescript-nullable';
+import { Nullable } from './http-load-from.directive';
 
 import { HttpLoadModule } from './http-load.module';
 import { HttpLoadArrayBufferFromDirective } from './http-load-from.directive';

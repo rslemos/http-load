@@ -9353,11 +9353,6 @@ qw@~1.0.1:
   resolved "https://registry.yarnpkg.com/qw/-/qw-1.0.1.tgz#efbfdc740f9ad054304426acb183412cc8b996d4"
   integrity sha1-77/cdA+a0FQwRCassYNBLMi5ltQ=
 
-ramda@^0.25.0:
-  version "0.25.0"
-  resolved "https://registry.yarnpkg.com/ramda/-/ramda-0.25.0.tgz#8fdf68231cffa90bc2f9460390a0cb74a29b29a9"
-  integrity sha512-GXpfrYVPwx3K7RQ6aYT8KPS8XViSXUVJT1ONhoKPE9VAleW42YE+U+8VEyGWt41EnEQW7gwecYJriTI0pKoecQ==
-
 randombytes@^2.0.0, randombytes@^2.0.1, randombytes@^2.0.5, randombytes@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/randombytes/-/randombytes-2.1.0.tgz#df6f84372f0270dc65cdf6291349ab7a473d4f2a"
@@ -11450,13 +11445,6 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
-
-typescript-nullable@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/typescript-nullable/-/typescript-nullable-0.6.0.tgz#006a21c6e88e7a479b521019f31e7a850a57c857"
-  integrity sha512-j8I67iSwFWvWzYe/ilCqtVgspcXUGQq6yMegO4D0VkHovlXwLAvUz6kOSZLLrXPJSsD/vN8I3QNx2en/S9ZYGQ==
-  dependencies:
-    ramda "^0.25.0"
 
 typescript@~3.9.5:
   version "3.9.7"
