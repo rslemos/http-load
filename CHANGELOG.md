@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/rslemos/http-load/compare/v2.0.0...v2.0.1) (2024-04-27)
+
+
+### Bug Fixes
+
+* **#1:** remove dependency on `typescript-nullable` ([cc8f63f](https://github.com/rslemos/http-load/commit/cc8f63f9ea58a17a79b9119b5f51aa9816403cdb)), closes [#1](https://github.com/rslemos/http-load/issues/1)
+
 # [2.0.0](https://github.com/rslemos/http-load/compare/v1.0.1...v2.0.0) (2021-02-28)
 
 
