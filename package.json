@@ -4,8 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build:http-load": "ng build --prod http-load && copyfiles ./README.md ./dist/http-load",
-    "build:demo-app": "ng build --prod demo-app --base-href='https://rslemos.github.io/http-load/'",
+    "build:http-load": "ng build --configuration production http-load && copyfiles ./README.md ./dist/http-load",
+    "build:demo-app": "ng build --configuration production demo-app --base-href='https://rslemos.github.io/http-load/'",
     "test": "ng test",
     "test:coverage": "ng test --code-coverage --watch=false",
     "report-coverage": "cat ./coverage/http-load/lcov.info | codecov",
@@ -17,19 +17,19 @@
   },
   "private": false,
   "dependencies": {
-    "@angular/common": "~11.2.14",
-    "@angular/compiler": "~11.2.14",
-    "@angular/core": "~11.2.14",
-    "@angular/platform-browser": "~11.2.14",
-    "@angular/platform-browser-dynamic": "~11.2.14",
+    "@angular/common": "~12.2.17",
+    "@angular/compiler": "~12.2.17",
+    "@angular/core": "~12.2.17",
+    "@angular/platform-browser": "~12.2.17",
+    "@angular/platform-browser-dynamic": "~12.2.17",
     "rxjs": "~6.5.5",
-    "tslib": "^2.0.0",
-    "zone.js": "~0.10.3"
+    "tslib": "^2.6.2",
+    "zone.js": "~0.11.4"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "~0.1102.19",
-    "@angular/cli": "~11.2.19",
-    "@angular/compiler-cli": "~11.2.14",
+    "@angular-devkit/build-angular": "~12.2.18",
+    "@angular/cli": "~12.2.18",
+    "@angular/compiler-cli": "~12.2.17",
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
     "@commitlint/prompt": "^11.0.0",
@@ -50,13 +50,13 @@
     "karma-coverage-istanbul-reporter": "~3.0.2",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "^1.5.0",
-    "ng-packagr": "^11.2.4",
+    "ng-packagr": "^12.2.7",
     "protractor": "~7.0.0",
     "replace-json-property": "^1.6.1",
     "semantic-release": "^17.2.1",
     "ts-node": "~8.3.0",
     "tslint": "~6.1.0",
-    "typescript": "~4.1.6"
+    "typescript": "~4.3.5"
   },
   "commitlint": {
     "extends": [
